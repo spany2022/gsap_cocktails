@@ -1,9 +1,13 @@
-import React from "react";
+import React, { useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import { SplitText } from "gsap/all";
 import gsap from "gsap";
+import { useMediaQuery } from "react-responsive";
 
 const Hero = () => {
+  const videoRef = useRef();
+
+  const isMobile = useMediaQuery({ maxWidth: 767 });
   useGSAP(() => {
     const heroSplit = new SplitText(".title", { type: "chars, words" });
     const paragraphSplit = new SplitText(".subtitle", { type: "lines" });
@@ -26,16 +30,40 @@ const Hero = () => {
       delay: 1,
     });
 
-    gsap.timeline({
-        scrollTrigger:{
-            trigger: '#hero',
-            start: 'top top',  // when top of the hero section reach the top of the view port the trigger will happen
-            end: 'bottom top', // when bottom of the hero section reach the top of the view port the trigger will end
-            scrub: true
-        }
-    })
-    .to('.right-leaf', {y:200},0)
-    .to('.left-leaf', {y: -200}, 0)
+    gsap
+      .timeline({
+        scrollTrigger: {
+          trigger: "#hero",
+          start: "top top", // when top of the hero section reach the top of the view port the trigger will happen
+          end: "bottom top", // when bottom of the hero section reach the top of the view port the trigger will end
+          scrub: true,
+        },
+      })
+      .to(".right-leaf", { y: 200 }, 0)
+      .to(".left-leaf", { y: -200 }, 0);
+
+    const startValue = isMobile ? "top 50%" : "center 60%";
+    const endValue = isMobile ? "120% top" : "bottom top";
+
+    // video animation timeline
+    let tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: "video",
+        start: startValue,
+        end: endValue,
+        scrub: true,  // Syncs scroll position with the animation.
+        pin: true, // Keeps the video in place (pinned) during the scroll.
+      },
+    });
+
+    videoRef.current.onloadedmetadata = () => {
+      tl.to(videoRef.current, {
+        currentTime: videoRef.current.duration,
+      });
+    };
+    //onloadedmetadata runs after the video has loaded and its duration is known
+    // as you scroll, the video will slowly play from the beginning (currentTime = 0) to the end (currentTime = video duration) 
+    // — based on scroll position.
   }, []);
 
   return (
@@ -75,6 +103,16 @@ const Hero = () => {
           </div>
         </div>
       </section>
+
+      <div className="video absolute inset-0">
+        <video
+          ref={videoRef}
+          src="/videos/output.mp4"
+          muted
+          playsInline
+          preload="auto"
+        />
+      </div>
     </>
   );
 };
